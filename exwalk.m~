@@ -1,0 +1,64 @@
+%
+% exwalk.m %
+% Example of use of the walk routine
+% Generate spanning cluster (l-r spanning)
+
+
+pc = 0.59275;
+p =[0.6 0.61 0.62 0.63 0.64 0.68 0.72 0.76 0.84 0.92];
+L = [25 50 100 200 400 800];
+
+sizeOfp = size(p,2);
+sizeOfL = size(L,2);
+nsample = 10;
+
+
+M = zeros(1,sizeOfp);
+
+for k = 1:sizeOfL
+    lx = L(k);
+    ly = lx;
+    for j = 1:sizeOfp
+        for j=1:nsample
+        ncount = 0;
+        perc = [];
+        while (size(perc ,1)==0)
+            ncount = ncount + 1; 
+            if (ncount >1000)
+                return 
+            end
+            z=rand(lx,ly)<p(k); 
+            [lw,num]=bwlabel(z,4);
+            perc_x = intersect(lw(1,:),lw(lx,:)); 
+            perc = find(perc_x >0)
+        end
+
+        s = regionprops(lw,'Area');
+        clusterareas = cat(1,s.Area);
+        maxarea = max(clusterareas);
+        i = find(clusterareas==maxarea);
+        zz = lw == i;
+    
+        % zz now contains the spanning cluster 
+        %imagesc(zz); % Display spanning cluster
+
+        % Run walk on this cluster
+        [l,r] = walk(zz);
+        zzz = l.*r; % Find points where both l and r are non-zero 
+        zadd = zz + zzz;
+        
+        M(k) = M(k) + sum(sum(zzz));
+    end
+    M(k) = M(k) / nsample;
+end
+
+figure(1);
+plot(log10(p-pc), log10(M./(lx*lx)),'-o');
+xlabel('log10(p-p_c)')
+ylabel('log10(P_S_C)')
+
+% figure(2);
+% subplot(2,2,1), imagesc(zz); 
+% subplot(2,2,2), imagesc(zadd); 
+% subplot(2,2,3), imagesc(zzz>0); 
+% subplot(2,2,4), imagesc(l+r>0);
